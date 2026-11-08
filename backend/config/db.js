@@ -10,7 +10,7 @@ const connect_db = async () => {
     await mongoose.connect(mongo_uri)
     console.log(`mongo db connected`)
   } catch (error) {
-    console.log(`error occured while conecting to db!`)
+    console.log(`error occured while conecting to db!\n ${error}`)
   }
 }
 
