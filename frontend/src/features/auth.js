@@ -1,28 +1,16 @@
 import api from "@/lib/api.js"
 
 export const login = async (token) => {
-  try {
-    const {data} = await api.post('/api/auth/login', {token})
-    return data
-  } catch (error) {
-    console.log(error)
-  }
+  const {data} = await api.post('/api/auth/login', {token})
+  return data
 }
 
 export const logout = async () => {
-  try {
-    const {data} = await api.get('/api/auth/logout')
-    return data
-  } catch (error) {
-    console.log(error)
-  }
+  const {data} = await api.get('/api/auth/logout')
+  return data
 }
 
 export const get_me = async () => {
-  try {
-    const {data} = await api.get('/api/auth/me')
-    return data
-  } catch (error) {
-    console.log(error)
-  }
+  const {data} = await api.get('/api/auth/me')
+  return data
 }

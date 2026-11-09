@@ -4,6 +4,8 @@ import connect_db from './config/db.js'
 import cookieParser from 'cookie-parser'
 import cors from 'cors'
 import auth_router from './routers/auth.route.js'
+import agent_router from './routers/agent.route.js'
+import chat_router from './routers/chat.route.js'
 
 dotenv.config()
 const port = process.env.PORT || 7000
@@ -19,6 +21,8 @@ app.use(cors({
 }))
 
 app.use('/api/auth', auth_router)
+app.use('/api/agent', agent_router)
+app.use('/api/chat', chat_router)
 
 // health check
 app.get('/', async (req, res) => {
