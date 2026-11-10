@@ -1,13 +1,13 @@
 import React, { useState } from 'react'
 import Header from '@/components/Header'
-import { ArrowUpIcon, Bot, ChevronDown, ImagePlus, Loader2, Plus, User, Workflow } from 'lucide-react'
+import { ArrowUpIcon, Bot, ChevronDown, ImagePlus, Loader2, MessageCircle, Plus, User, Workflow } from 'lucide-react'
 import { useDispatch, useSelector } from 'react-redux'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@base-ui/react/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { setSelectedAgent } from '@/redux/agentSlice.js'
 import { Link } from 'react-router-dom'
-import { chat } from '@/features/chat.js'
+import { chat, chat_with_agent } from '@/features/chat.js'
 
 
 const gradient_bg = 'radial-gradient(ellipse 80% 60% at 50% 0%, #2b2f3a 0%, #191b21 55%, #121317 100%)'
@@ -41,9 +41,27 @@ const Home = () => {
     setMessages([...messages, newMessage])
     setInputMessage('')
 
-    if(!selectedAgent || selectedAgent === '') {
+    if (!selectedAgent || selectedAgent === '') {
       try {
         const res = await chat(inputMessage.trim())
+        const aiMessage = {
+          role: 'assistant',
+          text: res?.ai_response || 'Sorry, I could not process your request.'
+        }
+        setMessages(prevMessages => [...prevMessages, aiMessage])
+        setLoading(false)
+      } catch (error) {
+        console.log(error.response?.data?.message || error.message || 'An error occurred while processing your request.')
+        const aiMessage = {
+          role: 'assistant',
+          text: 'Sorry, I could not process your request.'
+        }
+        setMessages(prevMessages => [...prevMessages, aiMessage])
+        setLoading(false)
+      }
+    } else {
+      try {
+        const res = await chat_with_agent(inputMessage.trim(), selectedAgent)
         const aiMessage = {
           role: 'assistant',
           text: res?.ai_response || 'Sorry, I could not process your request.'
@@ -93,7 +111,7 @@ const Home = () => {
                       <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                         {message.role === 'user'
                           ? <div className="flex gap-3 items-start">
-                            <p className="whitespace-pre-wrap ">{message.text}</p>
+                            <p className="whitespace-pre-wrap text-zinc-800 bg-white/90 px-2 py-0.5 rounded-2xl">{message.text}</p>
                             <div className="h-7 w-7 rounded-md flex items-center justify-center overflow-hidden">
                               <img src={userData?.profile} alt="profile" className="w-full h-full object-cover" />
                             </div>
@@ -103,7 +121,7 @@ const Home = () => {
                             <div className="h-7 w-7 bg-white rounded-md flex items-center justify-center shrink-0">
                               <Workflow size={16} className="text-zinc-500" />
                             </div>
-                            <p className="whitespace-pre-wrap">{message.text}</p>
+                            <p className="whitespace-pre-wrap text-slate-300">{message.text}</p>
                           </div>
                         }
 
@@ -158,16 +176,24 @@ const Home = () => {
                             e.preventDefault()
                             dispatch(setSelectedAgent(agent.name))
                           }}
-                            className={`cursor-pointer ${menuItem} ${selectedAgent === agent.name ? 'bg-white/10 text-white' : ''}`}
+                            className={`cursor-pointer p-1 ${selectedAgent === agent.name ? 'bg-white/10 text-white' : ''}`}
                           >
                             {agent?.name}
                           </DropdownMenuItem>
                         ))}
                         <DropdownMenuSeparator className={`${menuSeparator}`} />
-                        <DropdownMenuItem asChild className={menuItem}>
-                          <Link to={"/agent/new"} className="flex items-center gap-2 text-white cursor-pointer">
+                        <DropdownMenuItem asChild>
+                          <Link to={"/agent/new"} className="flex items-center gap-2 text-white cursor-pointer p-1">
                             <Plus size={15} /> Create New Agent
                           </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <div onClick={(e) => {
+                            e.preventDefault()
+                            dispatch(setSelectedAgent(''))
+                          }} className="flex items-center gap-2 text-white cursor-pointer p-1">
+                            <MessageCircle size={15} /> Temporary Chat
+                          </div>
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>

@@ -1,6 +1,5 @@
 import { ChatGroq } from "@langchain/groq"
-import { MessagesAnnotation, StateGraph } from '@langchain/langgraph'
-import { RemoveMessage } from "@langchain/core/messages";
+import { StateGraph, MessagesAnnotation, START, END } from '@langchain/langgraph'
 import { MongoClient } from "mongodb";
 import { MongoDBSaver } from "@langchain/langgraph-checkpoint-mongodb";
 
@@ -14,27 +13,18 @@ const llm = new ChatGroq({
 })
 
 const client = new MongoClient(process.env.MONGO_URI);
-const checkpointer = new MongoDBSaver({ client });
+const checkpointer = new MongoDBSaver({ client, dbName: "chat_graph_db" });
 
 const chat_node = async (state) => {
-  const invalidMessages = state.messages.filter(({ content }) => typeof content !== 'string')
-  const messages = state.messages.filter(({ content }) => typeof content === 'string')
-  const response = await llm.invoke(messages)
-
-  return {
-    messages: [
-      ...invalidMessages
-        .filter(({ id }) => id)
-        .map(({ id }) => new RemoveMessage({ id })),
-      response
-    ]
-  }
+  const recent_messages = state.messages.slice(-4)
+  const response = await llm.invoke(recent_messages)
+  return { messages: [response] }
 }
 
 const workflow = new StateGraph(MessagesAnnotation)
   .addNode('chat_node', chat_node)
-  .addEdge('__start__', 'chat_node')
-  .addEdge('chat_node', '__end__')
+  .addEdge(START, 'chat_node')
+  .addEdge('chat_node', END)
 
 const chat_graph = workflow.compile({ checkpointer })
 
